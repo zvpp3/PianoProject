@@ -18,37 +18,18 @@ DEFAULT_SHEET = """u u
 u u u
 u u u
 u u u
-[eup] u u
-[rua] u u
-u u u
-[eup] [rua] [tus]
-[rua] [eup] [rua]
-[tus] u u
-[rua] u u
-u u u
-[eup] u [uf]
-[tus] u u
-[rua] u u
-u u u
-[eup] [uf] [tus]
-[rua] [eup] [rua]
-[tus] u u
-[rua] u u
-u u u
-[eup] [uf] [tus]
-[rua] [eup] [rua]
-[tus] u u"""
+[eup] u u"""
 
 SETTINGS_FILE = Path("autoplayer_settings.json")
 TOKEN_RE = re.compile(r"\[[^\]]+\]|\S+")
-VALID_KEY = re.compile(r"^[a-z0-9]$")
+MOD_TOKENS = {"CTRL", "SHIFT", "ALT"}
 
 
 class App:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("🌌 Interstellar Roblox Piano Autoplayer")
-        self.root.geometry("980x720")
+        self.root.geometry("1000x760")
         self.root.configure(bg="#090b1a")
 
         self.stop_event = threading.Event()
@@ -57,17 +38,16 @@ class App:
 
         cfg = self._load_settings()
         self.bpm_var = tk.IntVar(value=cfg.get("bpm", 120))
-        self.hold_var = tk.DoubleVar(value=cfg.get("hold", 0.030))
+        self.hold_var = tk.DoubleVar(value=cfg.get("hold", 0.022))
         self.start_delay_var = tk.DoubleVar(value=cfg.get("start_delay", 4.0))
         self.loop_var = tk.BooleanVar(value=cfg.get("loop", False))
+        self.always_on_top_var = tk.BooleanVar(value=cfg.get("always_on_top", False))
         self.start_keybind_var = tk.StringVar(value=cfg.get("start_keybind", "f8"))
         self.cancel_keybind_var = tk.StringVar(value=cfg.get("cancel_keybind", "backspace"))
 
-        self.start_key_entry: ttk.Entry | None = None
-        self.cancel_key_entry: ttk.Entry | None = None
-
         self._build_style()
         self._build_ui(cfg.get("sheet_text", DEFAULT_SHEET))
+        self.root.attributes("-topmost", self.always_on_top_var.get())
         self._start_hotkey_listener()
         self._process_ui_queue()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -79,8 +59,6 @@ class App:
         style.configure("Card.TFrame", background="#10162e")
         style.configure("Galaxy.TLabel", background="#10162e", foreground="#e8ecff")
         style.configure("Title.TLabel", background="#090b1a", foreground="#90caf9", font=("Segoe UI", 18, "bold"))
-        style.configure("Galaxy.TButton", background="#1f2a5a", foreground="white", font=("Segoe UI", 10, "bold"), padding=8)
-        style.map("Galaxy.TButton", background=[("active", "#2b3d84")])
 
     def _build_ui(self, initial_sheet: str) -> None:
         wrap = ttk.Frame(self.root, style="Galaxy.TFrame", padding=16)
@@ -92,8 +70,8 @@ class App:
 
         left = ttk.Frame(top, style="Card.TFrame", padding=12)
         left.pack(side="left", fill="both", expand=True, padx=(0, 8))
-        ttk.Label(left, text="Sheet Input (paste anything in your bracket format)", style="Galaxy.TLabel").pack(anchor="w")
-        self.sheet_box = scrolledtext.ScrolledText(left, wrap="word", bg="#0c1230", fg="#dfe7ff", insertbackground="white", font=("Consolas", 11), height=26)
+        ttk.Label(left, text="Sheet Input (single chars play individually; [D F K] is a chord)", style="Galaxy.TLabel").pack(anchor="w")
+        self.sheet_box = scrolledtext.ScrolledText(left, wrap="word", bg="#0c1230", fg="#dfe7ff", insertbackground="white", font=("Consolas", 11), height=28)
         self.sheet_box.pack(fill="both", expand=True, pady=8)
         self.sheet_box.insert("1.0", initial_sheet)
 
@@ -109,34 +87,40 @@ class App:
         ttk.Button(step_col, text="▲", width=3, command=lambda: self._bpm_step(1)).pack(pady=(0, 3))
         ttk.Button(step_col, text="▼", width=3, command=lambda: self._bpm_step(-1)).pack()
 
-        self._spinbox_row(right, "Hold duration", self.hold_var, 0.01, 0.30, 0.005)
+        self._spinbox_row(right, "Hold duration", self.hold_var, 0.001, 0.30, 0.001)
         self._spinbox_row(right, "Start delay", self.start_delay_var, 0.0, 10.0, 0.1)
-
-        ttk.Checkbutton(right, text="Loop song", variable=self.loop_var).pack(anchor="w", pady=(6, 8))
+        ttk.Checkbutton(right, text="Loop song", variable=self.loop_var).pack(anchor="w", pady=(6, 4))
+        ttk.Checkbutton(right, text="Always on top", variable=self.always_on_top_var, command=self._apply_topmost).pack(anchor="w", pady=(0, 8))
 
         ttk.Label(right, text="Click box then press start hotkey", style="Galaxy.TLabel").pack(anchor="w")
-        self.start_key_entry = ttk.Entry(right, textvariable=self.start_keybind_var, width=20)
-        self.start_key_entry.pack(anchor="w", pady=(2, 8))
-        self.start_key_entry.bind("<KeyPress>", lambda e: self._capture_entry_key(e, self.start_keybind_var))
+        start_entry = ttk.Entry(right, textvariable=self.start_keybind_var, width=20)
+        start_entry.pack(anchor="w", pady=(2, 8))
+        start_entry.bind("<KeyPress>", lambda e: self._capture_entry_key(e, self.start_keybind_var))
 
         ttk.Label(right, text="Click box then press cancel hotkey", style="Galaxy.TLabel").pack(anchor="w")
-        self.cancel_key_entry = ttk.Entry(right, textvariable=self.cancel_keybind_var, width=20)
-        self.cancel_key_entry.pack(anchor="w", pady=(2, 12))
-        self.cancel_key_entry.bind("<KeyPress>", lambda e: self._capture_entry_key(e, self.cancel_keybind_var))
+        cancel_entry = ttk.Entry(right, textvariable=self.cancel_keybind_var, width=20)
+        cancel_entry.pack(anchor="w", pady=(2, 12))
+        cancel_entry.bind("<KeyPress>", lambda e: self._capture_entry_key(e, self.cancel_keybind_var))
 
-        ttk.Button(right, text="▶ Start", style="Galaxy.TButton", command=self.start_playback).pack(fill="x", pady=4)
-        ttk.Button(right, text="■ Stop", style="Galaxy.TButton", command=self.stop_playback).pack(fill="x", pady=4)
-        ttk.Button(right, text="Reset Sheet", style="Galaxy.TButton", command=self.reset_sheet).pack(fill="x", pady=4)
+        ttk.Button(right, text="▶ Start", command=self.start_playback).pack(fill="x", pady=4)
+        ttk.Button(right, text="■ Stop", command=self.stop_playback).pack(fill="x", pady=4)
+        ttk.Button(right, text="Reset Sheet", command=self.reset_sheet).pack(fill="x", pady=4)
 
         self.progress = ttk.Progressbar(right, maximum=100, length=260)
-        self.progress.pack(pady=(12, 6))
-        self.status = ttk.Label(wrap, text="Ready. Focus Roblox and press Start (or start hotkey).", style="Galaxy.TLabel")
+        self.progress.pack(pady=(10, 6))
+        self.countdown_label = ttk.Label(right, text="Countdown: -", style="Galaxy.TLabel")
+        self.countdown_label.pack(anchor="w")
+        self.now_playing_label = ttk.Label(right, text="Now Playing: -", style="Galaxy.TLabel")
+        self.now_playing_label.pack(anchor="w", pady=(4, 0))
+        self.status = ttk.Label(wrap, text="Ready.", style="Galaxy.TLabel")
         self.status.pack(anchor="w", pady=(8, 0))
 
+    def _apply_topmost(self) -> None:
+        self.root.attributes("-topmost", self.always_on_top_var.get())
+        self._save_settings()
+
     def _bpm_step(self, delta: int) -> None:
-        current = int(self.bpm_var.get())
-        nxt = max(10, min(500, current + delta))
-        self.bpm_var.set(nxt)
+        self.bpm_var.set(max(10, min(500, int(self.bpm_var.get()) + delta)))
         self._save_settings()
 
     @staticmethod
@@ -146,16 +130,11 @@ class App:
 
     @staticmethod
     def _normalize_key_name(raw: str) -> str:
-        key = raw.strip().lower()
         aliases = {"return": "enter", "escape": "esc", "prior": "page_up", "next": "page_down"}
-        return aliases.get(key, key)
+        return aliases.get(raw.strip().lower(), raw.strip().lower())
 
     def _capture_entry_key(self, event: tk.Event, var: tk.StringVar) -> str:
-        name = event.keysym.lower()
-        if name in {"shift_l", "shift_r", "control_l", "control_r", "alt_l", "alt_r"}:
-            return "break"
-        normalized = self._normalize_key_name(name)
-        var.set(normalized)
+        var.set(self._normalize_key_name(event.keysym))
         self._save_settings()
         return "break"
 
@@ -164,44 +143,69 @@ class App:
         normalized = sheet_text.replace("\\n", "\n")
         for token in TOKEN_RE.findall(normalized):
             if token.startswith("[") and token.endswith("]"):
-                keys = [ch for ch in token[1:-1] if not ch.isspace()]
+                inside = token[1:-1].strip()
+                if " " in inside:
+                    keys = [k for k in inside.split() if k]
+                else:
+                    keys = [ch for ch in inside if not ch.isspace()]
                 if keys:
                     steps.append(keys)
             else:
-                # Non-bracket token is interpreted as a chain of single key presses,
-                # so tokens like "u----" become u,-,-,-,-
                 for ch in token:
                     if not ch.isspace():
                         steps.append([ch])
-        return [s for s in steps if s]
+        return steps
+
+    def _key_to_pressable(self, key_text: str):
+        k = self._normalize_key_name(key_text)
+        if len(k) == 1:
+            return keyboard.KeyCode.from_char(k)
+        if k in keyboard.Key.__members__:
+            return keyboard.Key[k]
+        return None
 
     def _press_step(self, ctl: keyboard.Controller, keys: list[str], hold: float) -> None:
-        for key in keys:
-            ctl.press(key)
-        time.sleep(hold)
-        for key in reversed(keys):
-            ctl.release(key)
+        active_mods = []
+        pressables = []
+        for item in keys:
+            upper = item.upper()
+            if upper in MOD_TOKENS:
+                mod = {"CTRL": keyboard.Key.ctrl, "SHIFT": keyboard.Key.shift, "ALT": keyboard.Key.alt}[upper]
+                active_mods.append(mod)
+            else:
+                p = self._key_to_pressable(item)
+                if p is not None:
+                    pressables.append(p)
 
-    def _parse_keybind(self, raw: str):
-        key = self._normalize_key_name(raw)
-        if not key:
-            return None
-        if key in keyboard.Key.__members__:
-            return keyboard.Key[key]
-        if len(key) == 1 and VALID_KEY.match(key):
-            return keyboard.KeyCode.from_char(key)
+        try:
+            for mod in active_mods:
+                ctl.press(mod)
+            for p in pressables:
+                ctl.press(p)
+            time.sleep(hold)
+        finally:
+            for p in reversed(pressables):
+                ctl.release(p)
+            for mod in reversed(active_mods):
+                ctl.release(mod)
+
+    def _parse_hotkey(self, raw: str):
+        k = self._normalize_key_name(raw)
+        if len(k) == 1:
+            return keyboard.KeyCode.from_char(k)
+        if k in keyboard.Key.__members__:
+            return keyboard.Key[k]
         return None
 
     def _start_hotkey_listener(self) -> None:
         def on_press(key):
-            start_key = self._parse_keybind(self.start_keybind_var.get())
-            cancel_key = self._parse_keybind(self.cancel_keybind_var.get())
-            if cancel_key is not None and key == cancel_key:
+            start = self._parse_hotkey(self.start_keybind_var.get())
+            stop = self._parse_hotkey(self.cancel_keybind_var.get())
+            if stop is not None and key == stop:
                 self.stop_event.set()
                 self.msg_queue.put(("status", "Stop key pressed. Cancelling..."))
-            if start_key is not None and key == start_key and not self.playing:
+            if start is not None and key == start and not self.playing:
                 self.msg_queue.put(("start", ""))
-
         self.hotkey_listener = keyboard.Listener(on_press=on_press)
         self.hotkey_listener.daemon = True
         self.hotkey_listener.start()
@@ -213,25 +217,38 @@ class App:
         if not steps:
             messagebox.showerror("No notes", "Paste a valid sheet first.")
             return
-
         self._save_settings()
         self.stop_event.clear()
         self.playing = True
-        self.status.configure(text=f"Starting in {self.start_delay_var.get():.1f}s...")
         threading.Thread(target=self._play_worker, args=(steps,), daemon=True).start()
 
     def _play_worker(self, steps: list[list[str]]) -> None:
         ctl = keyboard.Controller()
-        time.sleep(max(0.0, self.start_delay_var.get()))
+        delay = max(0.0, self.start_delay_var.get())
+        started = time.perf_counter()
+        while not self.stop_event.is_set() and (time.perf_counter() - started) < delay:
+            remaining = delay - (time.perf_counter() - started)
+            self.msg_queue.put(("countdown", f"Countdown: {remaining:.1f}s"))
+            time.sleep(0.05)
+        self.msg_queue.put(("countdown", "Countdown: 0.0s"))
+
         loops = 0
         while not self.stop_event.is_set():
             loops += 1
             total = len(steps)
-            for i, step in enumerate(steps, start=1):
+            step_seconds = 60.0 / max(10, int(self.bpm_var.get()))
+            next_tick = time.perf_counter()
+            for i, step in enumerate(steps, 1):
                 if self.stop_event.is_set():
                     break
+                self.msg_queue.put(("playing", "Now Playing: " + " + ".join(step)))
                 self._press_step(ctl, step, max(0.001, self.hold_var.get()))
-                time.sleep(60.0 / max(10, self.bpm_var.get()))
+                next_tick += step_seconds
+                while True:
+                    remain = next_tick - time.perf_counter()
+                    if remain <= 0:
+                        break
+                    time.sleep(min(0.002, remain))
                 pct = int((i / total) * 100)
                 self.msg_queue.put(("progress", str(pct)))
                 self.msg_queue.put(("status", f"Playing loop {loops} - note {i}/{total} @ {self.bpm_var.get()} BPM"))
@@ -255,6 +272,10 @@ class App:
                     self.status.configure(text=value)
                 elif event == "progress":
                     self.progress["value"] = int(value)
+                elif event == "countdown":
+                    self.countdown_label.configure(text=value)
+                elif event == "playing":
+                    self.now_playing_label.configure(text=value)
                 elif event == "done":
                     self.status.configure(text=value)
                     self.playing = False
@@ -262,14 +283,14 @@ class App:
                     self.start_playback()
         except queue.Empty:
             pass
-        self.root.after(60, self._process_ui_queue)
+        self.root.after(40, self._process_ui_queue)
 
     def _load_settings(self) -> dict:
         if not SETTINGS_FILE.exists():
             return {}
         try:
             return json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except Exception:
             return {}
 
     def _save_settings(self) -> None:
@@ -278,6 +299,7 @@ class App:
             "hold": float(self.hold_var.get()),
             "start_delay": float(self.start_delay_var.get()),
             "loop": bool(self.loop_var.get()),
+            "always_on_top": bool(self.always_on_top_var.get()),
             "start_keybind": self.start_keybind_var.get().strip().lower(),
             "cancel_keybind": self.cancel_keybind_var.get().strip().lower(),
             "sheet_text": self.sheet_box.get("1.0", "end").strip(),
