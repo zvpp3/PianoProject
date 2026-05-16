@@ -1,14 +1,11 @@
 # 🌌 Interstellar Roblox Piano Autoplayer (GUI)
 
 ## Features
-- Paste/copy sheet text directly in a large editor.
-- Reads each key individually by default (`u----` => `u - - - -`).
-- Chords supported with bracket notation, including spaced chords like `[ D F K ]`.
-- Supports modifier combos in chords: `CTRL`, `SHIFT`, `ALT` (example: `[CTRL SHIFT A]`).
-- BPM slider + ▲/▼ step buttons (10-500).
-- Always-on-top toggle.
-- Live dynamic countdown + "Now Playing" key display.
-- Start/stop, loop mode, hotkeys, and persisted settings.
+- Keys outside brackets play individually, one by one.
+- Keys inside brackets play simultaneously as a chord.
+- Special characters are supported directly (e.g. `# $ % ^ & * ( ) @ - _ +`).
+- Chord display is shown exactly as pasted in **Now Playing** (e.g. `[5tw]`).
+- BPM slider + ▲/▼ step buttons, dynamic countdown, always-on-top, and persistent settings.
 
 ## Install
 ```bash
