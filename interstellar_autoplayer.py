@@ -149,13 +149,18 @@ class App:
 
     def _parse_sheet(self, sheet_text: str) -> list[list[str]]:
         steps: list[list[str]] = []
-        for token in TOKEN_RE.findall(sheet_text):
+        normalized = sheet_text.replace("\\n", "\n")
+        for token in TOKEN_RE.findall(normalized):
             if token.startswith("[") and token.endswith("]"):
-                keys = [ch.lower() for ch in token[1:-1] if not ch.isspace()]
+                keys = [ch for ch in token[1:-1] if not ch.isspace()]
                 if keys:
                     steps.append(keys)
             else:
-                steps.append([token.lower()])
+                # Non-bracket token is interpreted as a chain of single key presses,
+                # so tokens like "u----" become u,-,-,-,-
+                for ch in token:
+                    if not ch.isspace():
+                        steps.append([ch])
         return [s for s in steps if s]
 
     def _press_step(self, ctl: keyboard.Controller, keys: list[str], hold: float) -> None:

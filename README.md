@@ -26,6 +26,8 @@ python interstellar_autoplayer.py
 ## Sheet format
 - Single note: `u`
 - Chord/simultaneous notes: `[eup]`
+- Dense chains are supported: `u----` is parsed as `u - - - -`
+- Supports letters, numbers, and symbols (including `-`, `%`, `*`, `(`, `)` etc.)
 
 ## Notes
 - Click/focus your Roblox piano window before starting.
