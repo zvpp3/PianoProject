@@ -1,0 +1,10 @@
+{
+  "bpm": 200,
+  "hold": 0.022,
+  "start_delay": 4.0,
+  "loop": false,
+  "always_on_top": true,
+  "start_keybind": "f8",
+  "cancel_keybind": "backspace",
+  "sheet_text": "3 6 8 0 6 8 0 e 8 0 e t 0 e t\nu e t u p t u p s u p s [upsf] [upsf]\n3 % 7 0 % 7 0 W 7 0 W r 0 W r\nu W r u O r u O a u O a [Ouaf] [Ouaf]\n6 * 0 e * 0 e T 0 e T u e T u\np T u p S u p S f p S f [Spfj] [Spfj]\n6 9 q e e y i p p d g [pdj] [pdj]\n6 8 ( e e t Y p p s D [Dpj] [Dpj]\n[OHf] u f u f I f O f p f a f O f\na f p f d f s f a f p f O f i D\nu f u f u f I f O f p f a f O f\na f p f d f s f a f p f O f i D\nu f i D u f i D u f i D u f i D\n[uf] 0\n3 6 8 0 6 8 0 e 8 0 e t 0 e t\nu e t u p t u p s s f j [sl] [sl]\n8 ( e t ( e t Y e t Y p t Y p\ns Y p s D p s D j s D j [sl] [sl]\n7 Q e r Q e r I e r I p r I p\na I p a G p a G j G a p G a p I\no a o u Y u I\nu Y Y a Y\nI u u a u\no I I a I\no [ak] [ak] [ak] [oh] [uf]\n[uf] [YD] [YD] [YD] [ak] [YD]\n[IG] [uf] [uf] [uf] [ak] [uf]\n[oh] [IG] [IG] [IG] [ak] [IG]\n[OH] [pj]\n[IG] h G h G f G [oh]\n[uf] [ig]\n[YD] f D f D S D [uf]\n[ipsg] s d f g h j h\ng s d f g h j h g s d f g h j h\ng s d f g h j J l k l k l j h g\nf G h G h G h G h G h G h G h\nf [qeti] t y u i o p o\ni t y u i o p o i t y u i o p o\ni t y u i o p o i t y u i o p o\ni t y u i o p P s d f g h j J k\n[sl] [uf]\n[oh] [(Ye]\n[wru] [ro] [ro] [ro] [ro] [ro] [Ir] [ru]\n[Yr] [Ya] [Ya] [Ya] [Ya] [Ya] [ua] [Ia]\n[oa] [ro] [ro] [ro] [ro] [ro] [Ir] [ru]\n[Yr] [Ya] [Ya] [Ya] [Ya] [Ya] [ua] [Ia]\n[oa] [oa] [oa] [uo] [ps] [ps] [up]\n[oa] [oa] [uo] [Ia] [Ia] [YI]\n[uo] [oah] [oah] [oah] [oah] [oah] [IGp] [uof]\n[YID] [Dsl] [Dsl] [Dsl] [Dsl] [Dsl] [Dak] [Dpj]\n[ofh] [oah] [oah] [oah] [oah] [oah] [IGp] [uof]\n[YID] [Dsl] [Dsl] [Dsl] [Dsl] [Dsl] [Dak] [Dpj]\n[ofh] [fh] [fh] [hk] [fj] [fj] [jl]\n[fh] [fh] [hk] [DG] [DG] [Gk]\n[ah] [ah] [fk] [pg] [pg] [sj]\n[of] [of] [ah] [ID] [ID] [Gp]\n[of] o u\nY [Yea] [Yea] [Yea] w u\na h f\nD [Dpk] [Dpk] [Dpk] o f\nk p D k o f\nk p D k\nw u r u w u r u w u r u w u r u\nW y r y W y r y W y r y W y r y\n[80et] 3 6 8 0 6 8 0 e 8 0 e t 0 e t\nu e t u p t u p s u p s [upsf] [upsf]"
+}
