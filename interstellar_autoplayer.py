@@ -101,7 +101,13 @@ class App:
         right.pack(side="left", fill="y")
 
         ttk.Label(right, text="Tempo (BPM)", style="Galaxy.TLabel").pack(anchor="w")
-        tk.Scale(right, from_=10, to=500, resolution=1, orient="horizontal", variable=self.bpm_var, bg="#10162e", fg="#e8ecff", highlightthickness=0, troughcolor="#283862", length=260).pack(pady=(4, 10))
+        bpm_row = ttk.Frame(right, style="Card.TFrame")
+        bpm_row.pack(anchor="w", pady=(4, 10))
+        tk.Scale(bpm_row, from_=10, to=500, resolution=1, orient="horizontal", variable=self.bpm_var, bg="#10162e", fg="#e8ecff", highlightthickness=0, troughcolor="#283862", length=220).pack(side="left")
+        step_col = ttk.Frame(bpm_row, style="Card.TFrame")
+        step_col.pack(side="left", padx=(6, 0))
+        ttk.Button(step_col, text="▲", width=3, command=lambda: self._bpm_step(1)).pack(pady=(0, 3))
+        ttk.Button(step_col, text="▼", width=3, command=lambda: self._bpm_step(-1)).pack()
 
         self._spinbox_row(right, "Hold duration", self.hold_var, 0.01, 0.30, 0.005)
         self._spinbox_row(right, "Start delay", self.start_delay_var, 0.0, 10.0, 0.1)
@@ -126,6 +132,12 @@ class App:
         self.progress.pack(pady=(12, 6))
         self.status = ttk.Label(wrap, text="Ready. Focus Roblox and press Start (or start hotkey).", style="Galaxy.TLabel")
         self.status.pack(anchor="w", pady=(8, 0))
+
+    def _bpm_step(self, delta: int) -> None:
+        current = int(self.bpm_var.get())
+        nxt = max(10, min(500, current + delta))
+        self.bpm_var.set(nxt)
+        self._save_settings()
 
     @staticmethod
     def _spinbox_row(parent: ttk.Frame, label: str, var: tk.DoubleVar, low: float, high: float, step: float) -> None:
